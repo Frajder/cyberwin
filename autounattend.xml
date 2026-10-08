@@ -839,7 +839,16 @@ $apps = @(
 )
 function Test-App($app) {
     if ($app.Name -eq 'Edge') { return (Test-Edge) }
-    return [bool](Get-AppxPackage -Name $app.Package -ErrorAction SilentlyContinue)
+    $package = Get-AppxPackage -Name $app.Package -ErrorAction SilentlyContinue
+    if (-not $package -or $package.Status -ne 'Ok') { return $false }
+    if ($app.Name -eq 'Photos') {
+        # Check the live app, not the old stub names in migration declarations.
+        [xml]$manifest = Get-Content -LiteralPath (Join-Path $package.InstallLocation 'AppxManifest.xml') -Raw
+        $main = $manifest.Package.Applications.Application | Where-Object Id -eq 'App'
+        if (-not $main -or $main.Executable -eq 'Microsoft.Lightbox.exe' -or $main.EntryPoint -match '^AppStub_Windows\.') { return $false }
+        return (Test-Path -LiteralPath (Join-Path $package.InstallLocation $main.Executable))
+    }
+    return $true
 }
 try {
     $missing = @($apps | Where-Object { -not (Test-App $_) })
@@ -853,9 +862,16 @@ try {
         }
         $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
         if (-not $winget) { throw 'App Installer/WinGet is unavailable. Install App Installer from Microsoft Store, then run the desktop shortcut.' }
+        # Refresh the old inbox client's Store certificate pins before Store downloads.
+        & $winget.Source upgrade --id Microsoft.AppInstaller --exact --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity
+        Write-Output "App Installer update exit: $LASTEXITCODE"
+        $client = Get-AppxPackage Microsoft.DesktopAppInstaller
+        $winget = Get-Command (Join-Path $client.InstallLocation 'winget.exe') -ErrorAction Stop
         foreach ($app in $missing) {
             Write-Output "Installing $($app.Name)..."
-            & $winget.Source install --id $app.Id --exact --source $app.Source --accept-source-agreements --accept-package-agreements --disable-interactivity
+            $extra = @()
+            if ($app.Name -eq 'Photos') { $extra = @('--force') }
+            & $winget.Source install @extra --id $app.Id --exact --source $app.Source --accept-source-agreements --accept-package-agreements --disable-interactivity
             $code = $LASTEXITCODE
             for ($i = 0; $i -lt 10; $i++) {
                 if (Test-App $app) { break }
@@ -863,7 +879,7 @@ try {
             }
             if (-not (Test-App $app)) {
                 $failed = $true
-                Write-Warning "$($app.Name) is missing after installation (exit $code)."
+                Write-Warning "$($app.Name) is unavailable or incomplete after installation (exit $code)."
             }
         }
     }

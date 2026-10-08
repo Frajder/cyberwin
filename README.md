@@ -24,7 +24,7 @@ For an existing checkout with dependencies installed:
 bash ./build-iso.sh /path/to/Windows11.iso /path/to/cyberwin.iso
 ```
 
-On Arch Linux, install `git xorriso 7zip python` with pacman. Other distributions need Bash, Python 3, coreutils, xorriso, and either `7z` or `7zz`. A different valid local account name can be entered at the prompt. For automation, `CYBERWIN_ADMIN_USER` selects the name and standard input supplies one password line. Keep passwords out of shell history and command arguments.
+On Arch Linux, install `git xorriso 7zip python` with pacman. Other distributions need Bash, Python 3, coreutils, xorriso, and either `7z` or `7zz`. The username prompt accepts 1–20 ASCII letters, digits, underscores, dots or hyphens, beginning with a letter or digit; built-in account names are rejected. For automation, `CYBERWIN_ADMIN_USER` selects the name and standard input supplies one password line. Keep passwords out of shell history and command arguments.
 
 ## Install and finish setup
 
@@ -37,11 +37,11 @@ At the first sign-in for each new profile, Cyberwin keeps or installs these apps
 | App | Behavior |
 | --- | --- |
 | Paint | Preserved during debloating; installed from Microsoft Store if absent. |
-| Microsoft Photos | Preserved during debloating; installed from Microsoft Store if absent. |
+| Microsoft Photos | Preserved during debloating; the reduced inbox viewer is upgraded to the full Microsoft Store app. |
 | Microsoft Edge | Retained from the source ISO; installed with WinGet if absent. |
-| OneDrive | Existing installation is uninstalled if present; setup stubs and startup entries are removed on a clean install. User documents are preserved. |
+| OneDrive | Existing installation is uninstalled if present; setup stubs and startup entries are removed on a clean install. User documents are preserved. Photos can still show its own cloud sign-in links. |
 
-Missing apps need internet access and working Microsoft Store/App Installer. The app script checks the installed result. If anything is missing, it leaves a `Finish Cyberwin setup` desktop shortcut and shows a warning. Connect to the internet and run that shortcut. Logs are in `%LOCALAPPDATA%\Cyberwin\apps.log`.
+Missing or reduced apps need internet access and working Microsoft Store/App Installer. The script first updates the inbox App Installer client through WinGet, preserving Store certificate validation, then checks the installed result. Its runtime dependency may ask for normal UAC approval. If anything is missing or incomplete, it leaves a `Finish Cyberwin setup` desktop shortcut and shows a warning. Connect to the internet and run that shortcut. Logs are in `%LOCALAPPDATA%\Cyberwin\apps.log`.
 
 UAC stays enabled with normal administrator approval on the secure desktop. ODOS+ is a desktop URL shortcut; this project does not need an application-specific elevation workaround.
 
@@ -63,6 +63,6 @@ Run `python3 -m unittest discover -s tests -v` for account-generation tests and 
 
 If Setup does not apply the configuration, verify `autounattend.xml` is at the ISO root and inspect `C:\Windows\Panther\setupact.log` and `setuperr.log`. System-tweak logs are in `C:\Windows\Setup\Scripts`. The template is x64-only.
 
-If Paint/Photos are missing, inspect the app log, internet access and App Installer registration. Microsoft documents registration and installation in [WinGet documentation](https://learn.microsoft.com/windows/package-manager/winget/). App sources are [Paint](https://apps.microsoft.com/detail/9pcfs5b6t72h), [Photos](https://apps.microsoft.com/detail/9wzdncrfjbh4) and Microsoft.Edge in the WinGet repository.
+If Paint/Photos are missing or Photos asks for the full experience, inspect the app log, internet access and App Installer registration. Microsoft documents [WinGet registration and installation](https://learn.microsoft.com/windows/package-manager/winget/) and [App Installer updates](https://learn.microsoft.com/windows/msix/app-installer/install-update-app-installer). App sources are [Paint](https://apps.microsoft.com/detail/9pcfs5b6t72h), [Photos](https://apps.microsoft.com/detail/9wzdncrfjbh4) and Microsoft.Edge in the WinGet repository.
 
 The original file credits Memory's Tech Tips, [Schneegans' generator](https://schneegans.de/windows/unattend-generator/) and [Chris Titus Tech's WinUtil](https://github.com/ChrisTitusTech/winutil). Platform references: [UAC](https://learn.microsoft.com/windows/security/application-security/application-control/user-account-control/settings-and-configuration), [Windows Update policies](https://learn.microsoft.com/windows/deployment/update/windows-update-client-policies), [xorriso](https://www.gnu.org/software/xorriso/man_1_xorriso.html).
